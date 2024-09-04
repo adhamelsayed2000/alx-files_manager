@@ -1,15 +1,10 @@
-import { tmpdir } from 'os';
 import { promisify } from 'util';
-import Queue from 'bull/lib/queue';
-import { v4 as uuidv4 } from 'uuid';
 import {
-  mkdir, writeFile, stat, existsSync, realpath,
+  stat, existsSync, realpath,
 } from 'fs';
-import { join as joinPath } from 'path';
-import { Request, Response } from 'express';
 import { contentType } from 'mime-types';
 import mongoDBCore from 'mongodb/lib/core';
-import dbClient from '../utils/db';
+import { dbClient } from '../utils/db';
 import { getUserFromXToken } from '../utils/auth';
 
 const VALID_FILE_TYPES = {
@@ -18,13 +13,9 @@ const VALID_FILE_TYPES = {
   image: 'image',
 };
 const ROOT_FOLDER_ID = 0;
-const DEFAULT_ROOT_FOLDER = 'files_manager';
-const mkDirAsync = promisify(mkdir);
-const writeFileAsync = promisify(writeFile);
 const statAsync = promisify(stat);
 const realpathAsync = promisify(realpath);
 const MAX_FILES_PER_PAGE = 20;
-const fileQueue = new Queue('thumbnail generation');
 const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
 const isValidId = (id) => {
   const size = 24;
@@ -56,13 +47,8 @@ export default class FilesController {
    * @param {Response} res The Express response object.
    */
   static async postUpload(req, res) {
-    const { user } = req;
     const name = req.body ? req.body.name : null;
     const type = req.body ? req.body.type : null;
-    const parentId = req.body && req.body.parentId ? req.body.parentId : ROOT_FOLDER_ID;
-    const isPublic = req.body && req.body.isPublic ? req.body.isPublic : false;
-    const base64Data = req.body && req.body.data ? req.body.data : '';
-  
     if (!name) {
       res.status(400).json({ error: 'Missing name' });
       return;
@@ -73,9 +59,8 @@ export default class FilesController {
     }
     if (!req.body.data && type !== VALID_FILE_TYPES.folder) {
       res.status(400).json({ error: 'Missing data' });
-      return;
     }
-  
+
     // Continue with the logic for handling the file upload...
   }
 
@@ -84,7 +69,7 @@ export default class FilesController {
    * @param {Request} req The Express request object.
    * @param {Response} res The Express response object.
    */
- static async getIndex(req, res) {
+  static async getIndex(req, res) {
     const { user } = req;
     const parentId = req.query.parentId || ROOT_FOLDER_ID.toString();
     const page = /\d+/.test((req.query.page || '').toString())

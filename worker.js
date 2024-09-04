@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import Queue from 'bull/lib/queue';
 import imgThumbnail from 'image-thumbnail';
 import mongoDBCore from 'mongodb/lib/core';
-import dbClient from './utils/db';
+import { dbClient } from './utils/db';
 import Mailer from './utils/mailer';
 
 const writeFileAsync = promisify(writeFile);
